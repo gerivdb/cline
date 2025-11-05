@@ -9,6 +9,7 @@ import { WebviewProvider } from "@/core/webview"
 import { AuthHandler } from "@/hosts/external/AuthHandler"
 import { HostProvider } from "@/hosts/host-provider"
 import { DiffViewProvider } from "@/integrations/editor/DiffViewProvider"
+import { initializeNetworkConfig } from "@/shared/net"
 import { HOSTBRIDGE_PORT, waitForHostBridgeReady } from "./hostbridge-client"
 import { setLockManager } from "./lock-manager"
 import { PROTOBUS_PORT, startProtobusService } from "./protobus-service"
@@ -48,6 +49,9 @@ async function main() {
 	try {
 		// Set up error handlers FIRST (before any service starts)
 		setupGlobalErrorHandlers()
+
+		// Initialize network configuration (certificates and proxy) before any network operations
+		await initializeNetworkConfig(log)
 
 		const hostAddress = await waitForHostBridgeReady()
 

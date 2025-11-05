@@ -25,7 +25,7 @@ const TARGET_PLATFORMS = [
 	{ platform: "darwin", arch: "arm64", targetDir: "darwin-arm64" },
 	{ platform: "linux", arch: "x64", targetDir: "linux-x64" },
 ]
-const SUPPORTED_BINARY_MODULES = ["better-sqlite3"]
+const SUPPORTED_BINARY_MODULES = ["better-sqlite3", "system-ca"]
 
 const UNIVERSAL_BUILD = !process.argv.includes("-s")
 const IS_VERBOSE = process.argv.includes("-v") || process.argv.includes("--verbose")

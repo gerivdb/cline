@@ -51,18 +51,24 @@
  *
  * ## Certificate Trust
  *
- * Proxies often machine-in-the-middle HTTPS connections. To make this work,
- * they generate self-signed certificates for a host, and the client is
- * configured to trust the proxy as a certificate authority.
+ * **Standalone Mode (JetBrains, CLI)**: Automatically loads trusted certs
+ * from the operating system using the `system-ca` package:
+ * - Windows: Trusted Root Certification Authorities store
+ * - macOS: System and user keychains
+ * - Linux: Standard certificate directories (/etc/ssl/certs, etc.)
  *
- * VSCode transparently pulls trusted certificates from the operating system
- * and configures node trust.
+ * **VSCode**: Transparently pulls trusted certificates from the operating
+ * system and configures node trust.
  *
- * JetBrains exports trusted certificates from the OS and writes them to a
- * temporary file, then configures node TLS by setting NODE_EXTRA_CA_CERTS.
+ * ## Initialization
  *
- * CLI users should set the NODE_EXTRA_CA_CERTS environment variable if
- * necessary, because node does not automatically use the OS' trusted certs.
+ * For standalone mode, call `initializeNetworkConfig()` early in your startup
+ * sequence, before making any network requests:
+ *
+ * ```typescript
+ * import { initializeNetworkConfig } from '@/shared/net'
+ * await initializeNetworkConfig()
+ * ```
  *
  * ## Limitations in JetBrains & CLI
  *
@@ -77,7 +83,7 @@
  * 1. Verify proxy env vars: `echo $http_proxy $https_proxy`
  * 2. Check certificates: `echo $NODE_EXTRA_CA_CERTS` (should point to PEM file)
  * 3. View logs: Check ~/.cline/cline-core-service.log for network-related
- *    failures.
+ *    failures and certificate loading status.
  * 4. Test connection: Use `curl -x host:port` etc. to isolate proxy
  *    configuration versus client issues.
  *
@@ -93,13 +99,85 @@
  * ```
  */
 
+import * as fs from "fs/promises"
+import { systemCertsAsync } from "system-ca"
 import { EnvHttpProxyAgent, setGlobalDispatcher, fetch as undiciFetch } from "undici"
+
+// Certificate cache for standalone mode
+let cachedCertificates: string[] | undefined
 
 let mockFetch: typeof globalThis.fetch | undefined
 
 /**
- * Platform-configured fetch that respects proxy settings.
- * Use this instead of global fetch to ensure proper proxy configuration.
+ * Initialize network configuration for standalone mode.
+ * This function:
+ * 1. Loads OS certificates using system-ca
+ * 2. Includes Node.js built-in certificates
+ * 3. Optionally merges certificates from NODE_EXTRA_CA_CERTS
+ * 4. Configures undici agent with certificates and proxy support
+ *
+ * Should be called once at startup before any network requests.
+ * Safe to call in VSCode mode - will be a no-op.
+ *
+ * @returns Promise that resolves when network configuration is complete
+ */
+export async function initializeNetworkConfig(log: (...args: unknown[]) => void): Promise<void> {
+	// Only initialize in standalone mode
+	if (!process.env.IS_STANDALONE) {
+		log("intializeNetworkConfig is not running standalone and will not load certificate authorities")
+		return
+	}
+
+	// Load certificates
+	const errors: string[] = []
+	let certificates: string[] = []
+
+	try {
+		// Load OS certificates + Node.js built-ins
+		// system-ca returns an array of PEM-formatted certificate strings
+		certificates = await systemCertsAsync({
+			includeNodeCertificates: true,
+		})
+
+		// Optional: Also load from NODE_EXTRA_CA_CERTS if set
+		// Note: Node.js will automatically use this env var, but we include
+		// it here for consistency and to ensure all certs are in one place
+		if (process.env.NODE_EXTRA_CA_CERTS) {
+			try {
+				const extraCerts = await fs.readFile(process.env.NODE_EXTRA_CA_CERTS, "utf-8")
+				certificates.push(extraCerts)
+			} catch (err) {
+				errors.push(`Failed to load NODE_EXTRA_CA_CERTS: ${err}`)
+			}
+		}
+
+		cachedCertificates = certificates
+		log(`initializeNetworkConfig: loaded ${certificates.length} system certificates`)
+		if (errors.length > 0) {
+			log("initializeNetworkConfig: certificate loading warnings", errors.join("\n"))
+		}
+	} catch (err) {
+		// Non-fatal: fall back to Node.js built-ins
+		log("initializeNetworkConfig: failed to load system certificates:", err)
+		log("initializeNetworkConfig: falling back to Node.js built-in certificates")
+		cachedCertificates = undefined
+	}
+
+	// Now reconfigure the agent with certificates
+	const agentOptions: any = {}
+	if (cachedCertificates?.length) {
+		agentOptions.connect = {
+			ca: cachedCertificates,
+		}
+	}
+
+	const agent = new EnvHttpProxyAgent(agentOptions)
+	setGlobalDispatcher(agent)
+}
+
+/**
+ * fetch that respects proxy settings and certificate trust. Use this instead of
+ * global fetch to ensure proper proxy and certificate configuration.
  *
  * @example
  * ```typescript
@@ -114,7 +192,7 @@ export const fetch: typeof globalThis.fetch = (() => {
 	// Note: See esbuild.mjs, process.env.IS_STANDALONE is statically rewritten
 	// 'true' in the JetBrains/CLI build.
 	if (process.env.IS_STANDALONE) {
-		// Configure undici with ProxyAgent
+		// Create initial agent without certificates (will be reconfigured in initializeNetworkConfig)
 		const agent = new EnvHttpProxyAgent({})
 		setGlobalDispatcher(agent)
 		baseFetch = undiciFetch as any as typeof globalThis.fetch
