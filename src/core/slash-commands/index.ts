@@ -51,6 +51,7 @@ export async function parseSlashCommands(
 		"deep-planning",
 		"subagent",
 		"explain-changes",
+		"problems",
 	]
 
 	// Determine if the current provider/model/setting actually uses native tool calling
@@ -65,6 +66,18 @@ export async function parseSlashCommands(
 		"deep-planning": deepPlanningToolResponse(focusChainSettings, providerInfo, willUseNativeTools),
 		subagent: subagentToolResponse(),
 		"explain-changes": explainChangesToolResponse(),
+		problems: `<explicit_instructions type="problems">
+The user has asked to see the current workspace problems. You should examine the workspace diagnostics provided in the environment_details and report them clearly.
+
+Look for "workspace_diagnostics" in the environment_details section of the message. These contain the current problems detected by the language server (like Pylance).
+
+Format your response by:
+
+1. Listing all current problems with their file, line, column, severity, and message
+2. Group them by file if there are multiple
+3. If there are no problems, state that clearly
+4. Focus only on the problems, don't add extra commentary
+</explicit_instructions>\n`,
 	}
 
 	// Regex patterns to extract content from different XML tags
