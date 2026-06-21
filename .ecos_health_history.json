@@ -1,0 +1,68 @@
+[
+  {
+    "score": 72,
+    "grade": "C",
+    "metrics": {
+      "total_files": 1205,
+      "total_dirs": 315,
+      "max_files_per_dir": 41,
+      "overloaded_dirs": 0,
+      "max_depth": 9,
+      "test_coverage": 0.0,
+      "test_failures": 0,
+      "has_readme": false,
+      "has_docs": false,
+      "doc_coverage": 0.0,
+      "total_dependencies": 0,
+      "vulnerabilities": 0,
+      "obsolete_deps": 0,
+      "avg_complexity": 0.0,
+      "duplications": 0,
+      "config_issues": 0
+    },
+    "issues": [
+      "Profondeur excessive: 9 niveaux",
+      "README.md manquant",
+      "Documentation manquante"
+    ],
+    "recommendations": [
+      "Aplatir la hi\u00e9rarchie des dossiers",
+      "Cr\u00e9er un README.md",
+      "Cr\u00e9er dossier docs/ avec documentation"
+    ],
+    "timestamp": "2025-11-23T14:36:04.192455"
+  },
+  {
+    "score": 72,
+    "grade": "C",
+    "metrics": {
+      "total_files": 1206,
+      "total_dirs": 315,
+      "max_files_per_dir": 41,
+      "overloaded_dirs": 0,
+      "max_depth": 9,
+      "test_coverage": 0.0,
+      "test_failures": 0,
+      "has_readme": false,
+      "has_docs": false,
+      "doc_coverage": 0.0,
+      "total_dependencies": 0,
+      "vulnerabilities": 0,
+      "obsolete_deps": 0,
+      "avg_complexity": 0.0,
+      "duplications": 0,
+      "config_issues": 0
+    },
+    "issues": [
+      "Profondeur excessive: 9 niveaux",
+      "README.md manquant",
+      "Documentation manquante"
+    ],
+    "recommendations": [
+      "Aplatir la hi\u00e9rarchie des dossiers",
+      "Cr\u00e9er un README.md",
+      "Cr\u00e9er dossier docs/ avec documentation"
+    ],
+    "timestamp": "2025-11-23T14:37:01.681050"
+  }
+]
