@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 out
 dist
 dist-standalone
@@ -35,3 +36,27 @@ webview-ui/src/services/grpc-client.ts
 
 # E2E Tests
 test-results
+=======
+﻿# Fichiers temporaires
+*.tmp
+*.temp
+*.log
+*.swp
+*~
+
+# Dependances
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+>>>>>>> 7855b446d (Initial commit - Depot initialise automatiquement)
